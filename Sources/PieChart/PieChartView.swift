@@ -77,6 +77,9 @@ public final class PieChartView: UIView {
         super.draw(rect)
         guard let context = UIGraphicsGetCurrentContext() else { return }
         
+        // Очищаем контекст перед рисованием
+        context.clear(rect)
+        
         if entities.isEmpty {
             drawEmptyRing(context: context)
             drawEmptyLegend(context: context)
