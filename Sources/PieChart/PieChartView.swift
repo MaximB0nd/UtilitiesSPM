@@ -147,11 +147,11 @@ public final class PieChartView: UIView {
         let totalValue = entities.reduce(0) { $0 + $1.value }
         guard totalValue > 0 else { return }
         
-        let legendFont = UIFont.systemFont(ofSize: 12, weight: .medium)
-        let dotSize: CGFloat = 8
-        let spacing: CGFloat = 6
-        let lineHeight: CGFloat = 18
-        let maxLegendWidth: CGFloat = min(bounds.width, bounds.height) * 0.6 // Ограничиваем ширину легенды
+        let legendFont = UIFont.systemFont(ofSize: 10, weight: .medium)
+        let dotSize: CGFloat = 6
+        let spacing: CGFloat = 4
+        let lineHeight: CGFloat = 14
+        let maxLegendWidth: CGFloat = min(bounds.width, bounds.height) * 0.4 // Уменьшили с 0.6 до 0.4
         let legendHeight: CGFloat = CGFloat(entities.count) * lineHeight
         let legendOrigin = CGPoint(x: bounds.midX - maxLegendWidth/2, y: bounds.midY - legendHeight/2)
         
@@ -159,8 +159,8 @@ public final class PieChartView: UIView {
             let percentage = CGFloat((entity.value as NSDecimalNumber).doubleValue / CGFloat((totalValue as NSDecimalNumber).doubleValue))
             let percentText = String(format: "%d%%", Int(percentage * 100))
             
-            // Обрезаем длинный текст
-            let maxLabelLength = 15
+            // Обрезаем длинный текст еще больше
+            let maxLabelLength = 10
             let truncatedLabel = entity.label.count > maxLabelLength ? 
                 String(entity.label.prefix(maxLabelLength)) + "..." : entity.label
             
