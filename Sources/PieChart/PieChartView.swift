@@ -23,6 +23,46 @@ public final class PieChartView: UIView {
     
     public override init(frame: CGRect) {
         super.init(frame: frame)
+        setupBackground()
+    }
+    
+    private func setupBackground() {
+        if #available(iOS 13.0, *) {
+            backgroundColor = UIColor { trait in
+                trait.userInterfaceStyle == .dark ? .systemBackground : .systemBackground
+            }
+        } else {
+            backgroundColor = .systemBackground
+        }
+    }
+    
+    public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if #available(iOS 13.0, *) {
+            if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+                setupBackground()
+                updateColorsForCurrentTheme()
+                setNeedsDisplay()
+            }
+        }
+    }
+    
+    private func updateColorsForCurrentTheme() {
+        if #available(iOS 13.0, *) {
+            // Обновляем цвета сегментов для текущей темы
+            colors = [
+                UIColor { trait in trait.userInterfaceStyle == .dark ? .systemTeal : .systemGreen },
+                UIColor { trait in trait.userInterfaceStyle == .dark ? .systemYellow : .systemYellow },
+                UIColor { trait in trait.userInterfaceStyle == .dark ? .systemOrange : .systemOrange },
+                UIColor { trait in trait.userInterfaceStyle == .dark ? .systemPurple : .systemPurple },
+                UIColor { trait in trait.userInterfaceStyle == .dark ? .systemBlue : .systemBlue },
+                UIColor { trait in trait.userInterfaceStyle == .dark ? .systemGray : .systemGray }
+            ]
+            
+            // Обновляем цвета для пустого состояния и текста
+            emptyColor = UIColor { trait in trait.userInterfaceStyle == .dark ? .systemGray4 : .systemGray4 }
+            legendTextColor = UIColor { trait in trait.userInterfaceStyle == .dark ? .white : .black }
+        }
     }
     
     private var animationProgress: CGFloat = 1.0
@@ -48,7 +88,7 @@ public final class PieChartView: UIView {
         setNeedsDisplay()
     }
     
-    private let colors: [UIColor] = [
+    private var colors: [UIColor] = [
         .systemBlue,
         .systemGreen,
         .systemOrange,
@@ -58,14 +98,14 @@ public final class PieChartView: UIView {
     ]
     private let ringLineWidth: CGFloat = 24
     
-    private let emptyColor: UIColor = {
+    private var emptyColor: UIColor = {
         if #available(iOS 13.0, *) {
             return UIColor { trait in trait.userInterfaceStyle == .dark ? .systemGray : .systemGray4 }
         } else {
             return .lightGray
         }
     }()
-    private let legendTextColor: UIColor = {
+    private var legendTextColor: UIColor = {
         if #available(iOS 13.0, *) {
             return UIColor { trait in trait.userInterfaceStyle == .dark ? .white : .black }
         } else {
