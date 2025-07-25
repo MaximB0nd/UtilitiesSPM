@@ -159,7 +159,7 @@ public final class PieChartView: UIView {
         let dotSize: CGFloat = 6
         let spacing: CGFloat = 4
         let lineHeight: CGFloat = 14
-        let maxLegendWidth: CGFloat = min(bounds.width, bounds.height) * 0.4
+        let maxLegendWidth: CGFloat = min(bounds.width, bounds.height) * 0.5
         let legendHeight: CGFloat = CGFloat(entities.count) * lineHeight
         let legendOrigin = CGPoint(x: bounds.midX - maxLegendWidth/2, y: bounds.midY - legendHeight/2)
         
@@ -167,21 +167,13 @@ public final class PieChartView: UIView {
             let percentage = CGFloat((entity.value as NSDecimalNumber).doubleValue / CGFloat((totalValue as NSDecimalNumber).doubleValue))
             let percentText = String(format: "%d%%", Int(percentage * 100))
             
-          
-            let maxLabelLength = 10
-            let truncatedLabel = entity.label.count > maxLabelLength ? 
-                String(entity.label.prefix(maxLabelLength)) + "..." : entity.label
-            
-            let label = "\(percentText) \(truncatedLabel)"
             let y = legendOrigin.y + CGFloat(i) * lineHeight
             
-         
             let dotRect = CGRect(x: legendOrigin.x, y: y + (lineHeight-dotSize)/2, width: dotSize, height: dotSize)
             let dotPath = UIBezierPath(ovalIn: dotRect)
             colors[i % colors.count].setFill()
             dotPath.fill()
             
-           
             let textWidth = maxLegendWidth - dotSize - spacing
             let textRect = CGRect(x: legendOrigin.x + dotSize + spacing, y: y, width: textWidth, height: lineHeight)
             
@@ -190,14 +182,24 @@ public final class PieChartView: UIView {
                 .foregroundColor: legendTextColor
             ]
             
-           
-            let textSize = (label as NSString).size(withAttributes: attributes)
-            if textSize.width <= textWidth {
-                (label as NSString).draw(in: textRect, withAttributes: attributes)
+            let percentSize = (percentText as NSString).size(withAttributes: attributes)
+            let availableWidthForName = textWidth - percentSize.width - 2
+            
+            let fullName = entity.label
+            let fullNameSize = (fullName as NSString).size(withAttributes: attributes)
+            
+            let finalLabel: String
+            if fullNameSize.width <= availableWidthForName {
+                finalLabel = "\(percentText) \(fullName)"
             } else {
-                let shortLabel = percentText
-                (shortLabel as NSString).draw(in: textRect, withAttributes: attributes)
+                var truncatedName = fullName
+                while truncatedName.count > 3 && (truncatedName as NSString).size(withAttributes: attributes).width > availableWidthForName {
+                    truncatedName = String(truncatedName.dropLast())
+                }
+                finalLabel = "\(percentText) \(truncatedName)..."
             }
+            
+            (finalLabel as NSString).draw(in: textRect, withAttributes: attributes)
         }
     }
     
