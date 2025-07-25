@@ -34,8 +34,6 @@ public final class PieChartView: UIView {
         } else {
             backgroundColor = .white
         }
-        
-        // Инициализируем цвета при создании
         updateColorsForCurrentTheme()
     }
     
@@ -43,7 +41,6 @@ public final class PieChartView: UIView {
         super.traitCollectionDidChange(previousTraitCollection)
         if #available(iOS 13.0, *) {
             if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-                // Принудительно обновляем фон при смене темы
                 backgroundColor = .systemBackground
                 updateColorsForCurrentTheme()
                 setNeedsDisplay()
@@ -53,7 +50,6 @@ public final class PieChartView: UIView {
     
     private func updateColorsForCurrentTheme() {
         if #available(iOS 13.0, *) {
-            // Обновляем цвета сегментов для текущей темы
             colors = [
                 UIColor { trait in trait.userInterfaceStyle == .dark ? .systemTeal : .systemGreen },
                 UIColor { trait in trait.userInterfaceStyle == .dark ? .systemYellow : .systemYellow },
@@ -63,7 +59,6 @@ public final class PieChartView: UIView {
                 UIColor { trait in trait.userInterfaceStyle == .dark ? .systemGray : .systemGray }
             ]
             
-            // Обновляем цвета для пустого состояния и текста
             emptyColor = UIColor { trait in trait.userInterfaceStyle == .dark ? .systemGray4 : .systemGray4 }
             legendTextColor = UIColor { trait in trait.userInterfaceStyle == .dark ? .white : .black }
         }
