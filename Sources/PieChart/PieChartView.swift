@@ -193,10 +193,24 @@ public final class PieChartView: UIView {
                 finalLabel = "\(percentText) \(fullName)"
             } else {
                 var truncatedName = fullName
-                while truncatedName.count > 3 && (truncatedName as NSString).size(withAttributes: attributes).width > availableWidthForName {
+                let targetWidth = availableWidthForName
+                
+                while truncatedName.count > 0 && (truncatedName as NSString).size(withAttributes: attributes).width > targetWidth {
                     truncatedName = String(truncatedName.dropLast())
                 }
-                finalLabel = "\(percentText) \(truncatedName)..."
+                
+                if truncatedName.count > 3 {
+                    truncatedName = String(truncatedName.dropLast(3)) + "..."
+                }
+                
+                let finalText = "\(percentText) \(truncatedName)"
+                let finalSize = (finalText as NSString).size(withAttributes: attributes)
+                
+                if finalSize.width <= textWidth {
+                    finalLabel = finalText
+                } else {
+                    finalLabel = percentText
+                }
             }
             
             (finalLabel as NSString).draw(in: textRect, withAttributes: attributes)
