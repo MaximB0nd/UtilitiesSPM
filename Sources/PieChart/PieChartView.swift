@@ -77,41 +77,49 @@ public final class PieChartView: UIView {
         super.draw(rect)
         guard let context = UIGraphicsGetCurrentContext() else { return }
         
-        // Очищаем контекст перед рисованием
         context.clear(rect)
-        
-        if entities.isEmpty {
-            drawEmptyRing(context: context)
-            drawEmptyLegend(context: context)
-            return
-        }
         
         if isAnimatingChange {
             let progress = animationProgress
             let angle: CGFloat
             let alpha: CGFloat
             let entitiesToDraw: [Entity]
+            let oldIsEmpty = oldEntities.isEmpty
+            let newIsEmpty = entities.isEmpty
+            
             if progress < 0.5 {
                 angle = .pi * 2 * progress
                 alpha = 1.0 - progress * 2
-                entitiesToDraw = prepareEntities(oldEntities)
+                entitiesToDraw = oldIsEmpty ? [] : prepareEntities(oldEntities)
             } else {
                 angle = .pi * 2 * progress
                 alpha = (progress - 0.5) * 2
-                entitiesToDraw = prepareEntities(entities)
+                entitiesToDraw = newIsEmpty ? [] : prepareEntities(entities)
             }
+            
             context.saveGState()
             let center = CGPoint(x: bounds.midX, y: bounds.midY)
             context.translateBy(x: center.x, y: center.y)
             context.rotate(by: angle)
             context.translateBy(x: -center.x, y: -center.y)
             context.setAlpha(alpha)
-            drawPieRing(context: context, entities: entitiesToDraw)
-            drawLegendInCenter(context: context, entities: entitiesToDraw)
+            
+            if entitiesToDraw.isEmpty {
+                drawEmptyRing(context: context)
+                drawEmptyLegend(context: context)
+            } else {
+                drawPieRing(context: context, entities: entitiesToDraw)
+                drawLegendInCenter(context: context, entities: entitiesToDraw)
+            }
             context.restoreGState()
         } else {
-            drawPieRing(context: context, entities: prepareEntities(entities))
-            drawLegendInCenter(context: context, entities: prepareEntities(entities))
+            if entities.isEmpty {
+                drawEmptyRing(context: context)
+                drawEmptyLegend(context: context)
+            } else {
+                drawPieRing(context: context, entities: prepareEntities(entities))
+                drawLegendInCenter(context: context, entities: prepareEntities(entities))
+            }
         }
     }
 
@@ -151,7 +159,7 @@ public final class PieChartView: UIView {
         let dotSize: CGFloat = 6
         let spacing: CGFloat = 4
         let lineHeight: CGFloat = 14
-        let maxLegendWidth: CGFloat = min(bounds.width, bounds.height) * 0.4 // Уменьшили с 0.6 до 0.4
+        let maxLegendWidth: CGFloat = min(bounds.width, bounds.height) * 0.4
         let legendHeight: CGFloat = CGFloat(entities.count) * lineHeight
         let legendOrigin = CGPoint(x: bounds.midX - maxLegendWidth/2, y: bounds.midY - legendHeight/2)
         
@@ -159,7 +167,7 @@ public final class PieChartView: UIView {
             let percentage = CGFloat((entity.value as NSDecimalNumber).doubleValue / CGFloat((totalValue as NSDecimalNumber).doubleValue))
             let percentText = String(format: "%d%%", Int(percentage * 100))
             
-            // Обрезаем длинный текст еще больше
+          
             let maxLabelLength = 10
             let truncatedLabel = entity.label.count > maxLabelLength ? 
                 String(entity.label.prefix(maxLabelLength)) + "..." : entity.label
@@ -167,13 +175,13 @@ public final class PieChartView: UIView {
             let label = "\(percentText) \(truncatedLabel)"
             let y = legendOrigin.y + CGFloat(i) * lineHeight
             
-            // Рисуем цветную точку
+         
             let dotRect = CGRect(x: legendOrigin.x, y: y + (lineHeight-dotSize)/2, width: dotSize, height: dotSize)
             let dotPath = UIBezierPath(ovalIn: dotRect)
             colors[i % colors.count].setFill()
             dotPath.fill()
             
-            // Рисуем текст с проверкой границ
+           
             let textWidth = maxLegendWidth - dotSize - spacing
             let textRect = CGRect(x: legendOrigin.x + dotSize + spacing, y: y, width: textWidth, height: lineHeight)
             
@@ -182,12 +190,11 @@ public final class PieChartView: UIView {
                 .foregroundColor: legendTextColor
             ]
             
-            // Проверяем, помещается ли текст
+           
             let textSize = (label as NSString).size(withAttributes: attributes)
             if textSize.width <= textWidth {
                 (label as NSString).draw(in: textRect, withAttributes: attributes)
             } else {
-                // Если не помещается, рисуем только процент
                 let shortLabel = percentText
                 (shortLabel as NSString).draw(in: textRect, withAttributes: attributes)
             }
