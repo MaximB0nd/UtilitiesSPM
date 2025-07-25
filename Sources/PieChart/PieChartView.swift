@@ -29,18 +29,22 @@ public final class PieChartView: UIView {
     private func setupBackground() {
         if #available(iOS 13.0, *) {
             backgroundColor = UIColor { trait in
-                trait.userInterfaceStyle == .dark ? .systemBackground : .systemBackground
+                trait.userInterfaceStyle == .dark ? .systemBackground : .white
             }
         } else {
-            backgroundColor = .systemBackground
+            backgroundColor = .white
         }
+        
+        // Инициализируем цвета при создании
+        updateColorsForCurrentTheme()
     }
     
     public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         if #available(iOS 13.0, *) {
             if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-                setupBackground()
+                // Принудительно обновляем фон при смене темы
+                backgroundColor = .systemBackground
                 updateColorsForCurrentTheme()
                 setNeedsDisplay()
             }
@@ -117,7 +121,8 @@ public final class PieChartView: UIView {
         super.draw(rect)
         guard let context = UIGraphicsGetCurrentContext() else { return }
         
-        context.clear(rect)
+        backgroundColor?.setFill()
+        context.fill(rect)
         
         if isAnimatingChange {
             let progress = animationProgress
