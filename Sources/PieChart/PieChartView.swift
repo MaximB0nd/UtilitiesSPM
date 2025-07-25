@@ -8,6 +8,7 @@
 import Foundation
 import UIKit
 
+@available(iOS 13.0, *)
 public final class PieChartView: UIView {
     
     required init(coder: NSCoder) {
@@ -55,10 +56,32 @@ public final class PieChartView: UIView {
         .systemYellow,
         .systemGray
     ]
+    private let ringLineWidth: CGFloat = 24
+    
+    private let emptyColor: UIColor = {
+        if #available(iOS 13.0, *) {
+            return UIColor { trait in trait.userInterfaceStyle == .dark ? .systemGray : .systemGray4 }
+        } else {
+            return .lightGray
+        }
+    }()
+    private let legendTextColor: UIColor = {
+        if #available(iOS 13.0, *) {
+            return UIColor { trait in trait.userInterfaceStyle == .dark ? .white : .black }
+        } else {
+            return .black
+        }
+    }()
     
     public override func draw(_ rect: CGRect) {
         super.draw(rect)
         guard let context = UIGraphicsGetCurrentContext() else { return }
+        
+        if entities.isEmpty {
+            drawEmptyRing(context: context)
+            drawEmptyLegend(context: context)
+            return
+        }
         
         if isAnimatingChange {
             let progress = animationProgress
@@ -80,14 +103,16 @@ public final class PieChartView: UIView {
             context.rotate(by: angle)
             context.translateBy(x: -center.x, y: -center.y)
             context.setAlpha(alpha)
-            drawPieChart(context: context, entities: entitiesToDraw)
+            drawPieRing(context: context, entities: entitiesToDraw)
+            drawLegendInCenter(context: context, entities: entitiesToDraw)
             context.restoreGState()
         } else {
-            drawPieChart(context: context, entities: prepareEntities(entities))
+            drawPieRing(context: context, entities: prepareEntities(entities))
+            drawLegendInCenter(context: context, entities: prepareEntities(entities))
         }
     }
 
-    private func drawPieChart(context: CGContext, entities: [Entity]) {
+    private func drawPieRing(context: CGContext, entities: [Entity]) {
         guard !entities.isEmpty else { return }
         let totalValue = entities.reduce(0) { $0 + $1.value }
         guard totalValue > 0 else { return }
@@ -97,28 +122,64 @@ public final class PieChartView: UIView {
         for (index, entity) in entities.enumerated() {
             let percentage = CGFloat((entity.value as NSDecimalNumber).doubleValue / CGFloat((totalValue as NSDecimalNumber).doubleValue))
             let endAngle = startAngle + 2 * .pi * percentage
-            let path = UIBezierPath()
-            path.move(to: center)
-            path.addArc(
-                withCenter: center,
-                radius: radius,
-                startAngle: startAngle,
-                endAngle: endAngle,
-                clockwise: true
-            )
-            path.close()
-            colors[index % colors.count].setFill()
-            path.fill()
-            drawLegend(
-                context: context,
-                entity: entity,
-                percentage: percentage,
-                center: center,
-                midAngle: (startAngle + endAngle) / 2,
-                radius: radius * 0.6
-            )
+            let path = UIBezierPath(arcCenter: center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: true)
+            path.lineWidth = ringLineWidth
+            colors[index % colors.count].setStroke()
+            path.stroke()
             startAngle = endAngle
         }
+    }
+    
+    private func drawEmptyRing(context: CGContext) {
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+        let radius = min(bounds.width, bounds.height) * 0.4
+        let path = UIBezierPath(arcCenter: center, radius: radius, startAngle: 0, endAngle: 2 * .pi, clockwise: true)
+        path.lineWidth = ringLineWidth
+        emptyColor.setStroke()
+        path.stroke()
+    }
+    
+    private func drawLegendInCenter(context: CGContext, entities: [Entity]) {
+        guard !entities.isEmpty else { return }
+        let totalValue = entities.reduce(0) { $0 + $1.value }
+        guard totalValue > 0 else { return }
+        let legendFont = UIFont.systemFont(ofSize: 14, weight: .medium)
+        let dotSize: CGFloat = 10
+        let spacing: CGFloat = 8
+        let lineHeight: CGFloat = 22
+        let legendWidth: CGFloat = 160
+        let legendHeight: CGFloat = CGFloat(entities.count) * lineHeight
+        let legendOrigin = CGPoint(x: bounds.midX - legendWidth/2, y: bounds.midY - legendHeight/2)
+        for (i, entity) in entities.enumerated() {
+            let percentage = CGFloat((entity.value as NSDecimalNumber).doubleValue / CGFloat((totalValue as NSDecimalNumber).doubleValue))
+            let percentText = String(format: "%d%%", Int(percentage * 100))
+            let label = "\(percentText) \(entity.label)"
+            let y = legendOrigin.y + CGFloat(i) * lineHeight
+            // draw color dot
+            let dotRect = CGRect(x: legendOrigin.x, y: y + (lineHeight-dotSize)/2, width: dotSize, height: dotSize)
+            let dotPath = UIBezierPath(ovalIn: dotRect)
+            colors[i % colors.count].setFill()
+            dotPath.fill()
+            // draw text
+            let textRect = CGRect(x: legendOrigin.x + dotSize + spacing, y: y, width: legendWidth - dotSize - spacing, height: lineHeight)
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: legendFont,
+                .foregroundColor: legendTextColor
+            ]
+            (label as NSString).draw(in: textRect, withAttributes: attributes)
+        }
+    }
+    
+    private func drawEmptyLegend(context: CGContext) {
+        let legendFont = UIFont.systemFont(ofSize: 14, weight: .medium)
+        let text = "Нет данных"
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: legendFont,
+            .foregroundColor: legendTextColor.withAlphaComponent(0.5)
+        ]
+        let size = (text as NSString).size(withAttributes: attributes)
+        let rect = CGRect(x: bounds.midX - size.width/2, y: bounds.midY - size.height/2, width: size.width, height: size.height)
+        (text as NSString).draw(in: rect, withAttributes: attributes)
     }
     
     private func prepareEntities(_ entities: [Entity]) -> [Entity] {
